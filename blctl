@@ -1,0 +1,38 @@
+#!/bin/sh
+
+BRIGHTNESS_FILE="/sys/class/backlight/intel_backlight/brightness"
+MAX_BRIGHTNESS_FILE="/sys/class/backlight/intel_backlight/max_brightness"
+
+show_help() {
+    echo "Usage: $0 [percentage]"
+    echo "Set the screen brightness to the specified percentage (0-100)."
+    echo "If no percentage is provided, the current brightness will be displayed."
+    echo "Options:"
+    echo "  -h, --help        Show this help message"
+}
+
+if [ "$#" -eq 0 ]; then
+    # No arguments, print current brightness
+    current_brightness=$(cat "$BRIGHTNESS_FILE")
+    max_brightness=$(cat "$MAX_BRIGHTNESS_FILE")
+    percentage=$((current_brightness * 100 / max_brightness))
+    echo "Current brightness: $percentage% ($current_brightness)"
+elif [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    show_help
+else
+    # Set brightness based on percentage argument
+    percentage=$1
+
+    # Check if percentage is between 0 and 100
+    if [ "$percentage" -lt 0 ] || [ "$percentage" -gt 100 ]; then
+        echo "Error: Percentage must be between 0 and 100."
+        exit 1
+    fi
+
+    max_brightness=$(cat "$MAX_BRIGHTNESS_FILE")
+    new_brightness=$((max_brightness * percentage / 100))
+
+    # Set the new brightness
+    echo "$new_brightness" > "$BRIGHTNESS_FILE"
+    echo "Brightness set to $percentage% ($new_brightness)"
+fi
