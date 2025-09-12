@@ -1,68 +1,84 @@
-# BLCTL - Brightness Control for ThinkPad X220/X230
+# blctl
 
-A simple shell script to control screen brightness on ThinkPad X220 and X230 laptops through the kernel interface.
+A high-performance backlight controller written in x86-64 assembly for Linux systems. Originally implemented as a shell script, blctl was rewritten in assembly to reduce execution time from 20ms to 2ms.
 
-## Description
+## Overview
 
-`blctl` is a lightweight command-line utility that allows you to control your screen brightness by directly interacting with the kernel's backlight interface. It's specifically designed for ThinkPad X220 and X230 laptops, which use the Intel backlight interface.
+blctl manages screen brightness on Linux by interfacing directly with the `/sys/class/backlight/` filesystem. It automatically detects available backlight devices and allows you to set brightness levels as percentages or query the current brightness.
 
-## Requirements
+## How it works
 
-- Linux-based operating system
-- ThinkPad X220 or X230 (or other laptops using the Intel backlight interface)
-- Root/sudo access (for setting brightness)
-
-## Installation
-
-1. Download the script:
-```bash
-wget https://raw.githubusercontent.com/rwejlgaard/blctl/master/blctl
-```
-
-2. Make the script executable:
-```bash
-chmod +x blctl
-```
-
-3. Move the script to a directory in your PATH (optional):
-```bash
-sudo mv blctl /usr/local/bin/
-```
+The tool operates by:
+1. Scanning `/sys/class/backlight/` to find available backlight devices
+2. Reading the `max_brightness` file to determine the device's brightness range
+3. Either reading the current `brightness` value or calculating and writing a new value based on the percentage provided
+4. Converting between raw brightness values and human-readable percentages
 
 ## Usage
 
-### View Current Brightness
+### Display current brightness
 ```bash
 ./blctl
 ```
+Output: `Current brightness: 40% (26214)`
 
-### Set Brightness to a Specific Percentage
+### Set brightness to specific percentage
 ```bash
-./blctl 50  # Sets brightness to 50%
+./blctl 75
+./blctl 0
+./blctl 100
 ```
 
-### Show Help
+### Show help
 ```bash
+./blctl -h
 ./blctl --help
 ```
 
-## Notes
+## Examples
 
-- The script requires root privileges to modify the brightness. You may need to run it with `sudo` when setting brightness values.
-- The brightness value must be between 0 and 100.
-- The script reads from and writes to `/sys/class/backlight/intel_backlight/`.
+```bash
+# Check current brightness
+./blctl
+# Current brightness: 40% (26214)
 
-## Troubleshooting
+# Set brightness to 50%
+./blctl 50
+# Brightness set to 50% (32767)
 
-If you encounter permission issues, ensure that:
-1. You have the necessary permissions to access the backlight interface
-2. You're running the script with sufficient privileges (sudo)
-3. The backlight interface files exist at the specified paths
+# Set to minimum brightness
+./blctl 0
+# Brightness set to 0% (0)
 
-## License
+# Set to maximum brightness  
+./blctl 100
+# Brightness set to 100% (65535)
+```
 
-This project is open source and available under the MIT License.
+## Building
 
-## Contributing
+Requires NASM assembler and a C library for system calls:
 
-Feel free to submit issues and enhancement requests!
+```bash
+make
+```
+
+## Installation
+
+```bash
+sudo make install
+```
+
+This installs the binary to `/usr/local/bin/blctl`.
+
+## Requirements
+
+- Linux system with `/sys/class/backlight/` interface
+- NASM assembler (for building)
+- x86-64 architecture
+
+## Error Handling
+
+- Validates percentage input (0-100 range)
+- Automatically detects backlight devices
+- Provides clear error messages for invalid input or missing devices
