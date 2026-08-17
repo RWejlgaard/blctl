@@ -1,6 +1,6 @@
 # blctl
 
-A high-performance backlight controller written in x86-64 assembly for Linux systems. Originally implemented as a shell script, blctl was rewritten in assembly to reduce execution time from 20ms to 2ms.
+A high-performance backlight controller written in x86-64 assembly for Linux systems. Originally implemented as a shell script, blctl was rewritten in assembly to reduce execution time from 20ms to 2ms, and now runs entirely on raw syscalls with no libc.
 
 ## Overview
 
@@ -9,7 +9,7 @@ blctl manages screen brightness on Linux by interfacing directly with the `/sys/
 ## How it works
 
 The tool operates by:
-1. Scanning `/sys/class/backlight/` to find available backlight devices
+1. Scanning `/sys/class/backlight/` for the first device exposing both `brightness` and `max_brightness`
 2. Reading the `max_brightness` file to determine the device's brightness range
 3. Either reading the current `brightness` value or calculating and writing a new value based on the percentage provided
 4. Converting between raw brightness values and human-readable percentages
@@ -29,6 +29,9 @@ Output: `Current brightness: 40% (26214)`
 ./blctl 100
 ```
 
+Writing to `brightness` requires permission on the sysfs file — typically root, or
+membership of the `video` group with a matching udev rule.
+
 ### Show help
 ```bash
 ./blctl -h
@@ -44,7 +47,7 @@ Output: `Current brightness: 40% (26214)`
 
 # Set brightness to 50%
 ./blctl 50
-# Brightness set to 50% (32767)
+# Brightness set to 50% (32768)
 
 # Set to minimum brightness
 ./blctl 0
@@ -57,7 +60,7 @@ Output: `Current brightness: 40% (26214)`
 
 ## Building
 
-Requires NASM assembler and a C library for system calls:
+Requires only NASM and a linker:
 
 ```bash
 make
@@ -79,6 +82,9 @@ This installs the binary to `/usr/local/bin/blctl`.
 
 ## Error Handling
 
-- Validates percentage input (0-100 range)
-- Automatically detects backlight devices
-- Provides clear error messages for invalid input or missing devices
+Errors go to stderr and exit non-zero:
+
+- Rejects anything that is not a whole number in the 0-100 range, so a typo
+  cannot blank the screen
+- Reports when no backlight device is present
+- Reports when the brightness file cannot be written

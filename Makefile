@@ -1,10 +1,11 @@
-# Makefile for bl (Assembly backlight controller)
+# Makefile for blctl (assembly backlight controller)
 
 # Variables
 ASM = nasm
 LD = ld
 ASMFLAGS = -f elf64
-LDFLAGS = -lc -dynamic-linker /lib64/ld-linux-x86-64.so.2
+# blctl is pure syscalls - no libc, no dynamic linker
+LDFLAGS = -s --build-id=none
 
 # Target executable
 TARGET = blctl
